@@ -90,9 +90,10 @@ input[type=range]::-moz-range-thumb{ width:10px; height:10px; border:0; border-r
   clip-path:polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px)); }
 .preset svg{ width:100%; height:100%; display:block; } .preset.on{ border-color:#fff; box-shadow:0 0 0 1px #fff inset; }
 
-.cgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-.cgrid .cc{ text-align:center; } .cgrid label{ display:block; font-family:var(--hud); font-size:8.5px; letter-spacing:.1em; color:var(--dim); margin-bottom:4px; }
-.cgrid input[type=color]{ width:100%; height:30px; border:1px solid var(--ln2); background:#0a0b0e; padding:2px; cursor:pointer; }
+.cgrid{ display:flex; gap:9px; }
+.cgrid .cc{ text-align:center; } .cgrid label{ display:block; font-family:var(--hud); font-size:8px; letter-spacing:.06em; color:var(--dim); margin-bottom:4px; }
+.cgrid input[type=color]{ width:38px; height:38px; border:1px solid var(--ln2); background:#0a0b0e; padding:3px; cursor:pointer; }
+.cgrid input[type=color]::-webkit-color-swatch{ border:0; } .cgrid input[type=color]::-webkit-color-swatch-wrapper{ padding:0; }
 
 .actions{ display:flex; gap:10px; margin-top:3px; }
 .btn{ border:0; padding:13px; font-family:var(--hud); font-weight:700; font-size:12px; letter-spacing:.14em; cursor:pointer; transition:.12s; text-transform:uppercase;
@@ -134,7 +135,7 @@ input[type=range]::-moz-range-thumb{ width:10px; height:10px; border:0; border-r
       </div></div>
 
     <div class="mod"><div class="mh"><span class="ix">03</span><span class="nm">Note</span><span class="fl"></span><span class="nd"></span></div>
-      <div class="mb"><div class="field"><textarea id="f_note" maxlength="240"></textarea></div></div></div>
+      <div class="mb"><div class="field"><textarea id="f_note"></textarea></div></div></div>
 
     <div class="mod"><div class="mh"><span class="ix">04</span><span class="nm">Visual</span><span class="fl"></span><span class="nd"></span></div>
       <div class="mb">
@@ -198,6 +199,9 @@ const mSvg=document.createElementNS(NS,'svg'); mSvg.setAttribute('style','positi
 const mTxt=document.createElementNS(NS,'text'); mSvg.appendChild(mTxt); document.body.appendChild(mSvg);
 const PRE="'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
 function measure(str,size){ mTxt.setAttribute('font-size',size); mTxt.setAttribute('font-family',PRE); mTxt.setAttribute('font-weight','400'); mTxt.textContent=str; return mTxt.getComputedTextLength(); }
+const _mw={}; function mwid(s,fs){ const k=fs+'|'+s; if(_mw[k]==null)_mw[k]=measure(s,fs); return _mw[k]; }
+let _noteCache={txt:null,lines:null}; function wrapNoteCached(){ if(_noteCache.txt===St.note)return _noteCache.lines; const l=wrapNote(St.note); _noteCache={txt:St.note,lines:l}; return l; }
+let _elCache={el:null,tf:null};
 function mk(t,a){ const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; }
 function href(im,u){ im.setAttribute('href',u); im.setAttributeNS(XL,'href',u); }
 
@@ -205,7 +209,7 @@ function wrapNote(txt){ const out=[]; (txt||'').split('\n').forEach(par=>{ if(pa
   for(const ch of par){ if(cur&&measure(cur+ch,11.94)>NOTE_MAXW){out.push(cur);cur=ch;} else cur+=ch; } out.push(cur); }); return out.length?out:['']; }
 function chipRow(g,list,picked,y0){ g.textContent='';
   const x0=53.54,gap=5.81,rowH=23.22,h=18.87,maxX=DW-30,pad=11,fs=9.43,base=13.06; let x=x0,y=y0;
-  list.forEach(label=>{ const on=picked.indexOf(label)>=0; const w=measure(label,fs)+pad*2; if(x+w>maxX){x=x0;y+=rowH;}
+  list.forEach(label=>{ const on=picked.indexOf(label)>=0; const w=mwid(label,fs)+pad*2; if(x+w>maxX){x=x0;y+=rowH;}
     g.appendChild(mk('rect',{x:x.toFixed(2),y:y.toFixed(2),width:w.toFixed(2),height:h,fill:on?St.accent:'none',stroke:on?'none':St.line,'stroke-width':on?0:0.5}));
     const t=mk('text',{x:(x+w/2).toFixed(2),y:(y+base).toFixed(2),'text-anchor':'middle','font-family':PRE,'font-size':fs,fill:on?'#1a0e0b':St.line}); t.textContent=label; g.appendChild(t); x+=w+gap; }); }
 
@@ -261,7 +265,7 @@ function ensureDims(){ let any=false;
 
 function render(){
   imgMap={};
-  const noteLines=wrapNote(St.note);
+  const noteLines=wrapNoteCached();
   const H=Math.max(BASE_H, Math.ceil(NOTE_Y+noteLines.length*NOTE_LH+58));
   const W=DW+St.cp.length*STRIP;
   const host=document.getElementById('cardHost'); host.style.width=W+'px';
@@ -277,7 +281,7 @@ function render(){
 
   const bg=svg.querySelector('#badges'); bg.textContent='';
   (function(){ let x=53.54; const y=282.09,h=18.87,pad=12,fs=9.43,base=13.06;
-    [{t:St.adult?'성인':'미성년자',on:true},{t:'타장르 언급 '+(St.other?'O':'X'),on:false}].forEach(it=>{ const w=measure(it.t,fs)+pad*2;
+    [{t:St.adult?'성인':'미성년자',on:true},{t:'타장르 언급 '+(St.other?'O':'X'),on:false}].forEach(it=>{ const w=mwid(it.t,fs)+pad*2;
       bg.appendChild(mk('rect',{x:x.toFixed(2),y:y,width:w.toFixed(2),height:h,fill:it.on?St.accent:'none',stroke:it.on?'none':St.line,'stroke-width':it.on?0:0.5}));
       const t=mk('text',{x:(x+w/2).toFixed(2),y:(y+base).toFixed(2),'text-anchor':'middle','font-family':PRE,'font-size':fs,fill:it.on?'#1a0e0b':St.line}); t.textContent=it.t; bg.appendChild(t); x+=w+5.81; }); })();
 
@@ -289,8 +293,8 @@ function render(){
 
   const eg=svg.querySelector('#elIcon'); eg.textContent=''; eg.removeAttribute('transform');
   (ICONS[St.el]||[]).forEach(d=> eg.appendChild(mk('path',{d:d,fill:St.accent})));
-  const bb=eg.getBBox();
-  if(bb.width&&bb.height){ const s=44/Math.max(bb.width,bb.height); eg.setAttribute('transform','translate('+(DCX-(bb.x+bb.width/2)*s).toFixed(2)+' '+(DCY-(bb.y+bb.height/2)*s).toFixed(2)+') scale('+s.toFixed(4)+')'); }
+  if(_elCache.el===St.el && _elCache.tf){ eg.setAttribute('transform',_elCache.tf); }
+  else { const bb=eg.getBBox(); if(bb.width&&bb.height){ const s=44/Math.max(bb.width,bb.height); const tf='translate('+(DCX-(bb.x+bb.width/2)*s).toFixed(2)+' '+(DCY-(bb.y+bb.height/2)*s).toFixed(2)+') scale('+s.toFixed(4)+')'; eg.setAttribute('transform',tf); _elCache={el:St.el,tf}; } }
 
   // hero image (crop group under fade; hit on top)
   const hgrp=svg.querySelector('#hero-image'); const oh=hgrp.querySelector('#heroWrap'); if(oh) oh.remove();
@@ -316,6 +320,7 @@ function render(){
   curW=W; curH=H; document.getElementById('hudDim').textContent=W+'×'+H; applyScale(); save();
 }
 
+let _craf=0; function renderRAF(){ if(_craf)return; _craf=requestAnimationFrame(()=>{ _craf=0; render(); }); }
 /* ---------- panel ---------- */
 const $=s=>document.querySelector(s);
 function syncSeg(id,val){ document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===val)); }
@@ -352,10 +357,10 @@ EL.forEach(name=>{ const col=ETHEME[name]; const b=document.createElement('butto
   b.addEventListener('click',()=>{St.accent=col;$('#c_acc').value=col;syncPresets();recolorMini();render();}); pc.appendChild(b); });
 function syncPresets(){ document.querySelectorAll('.preset').forEach((b,i)=>b.classList.toggle('on',St.accent===ETHEME[EL[i]])); }
 
-$('#c_acc').addEventListener('input',e=>{St.accent=e.target.value;syncPresets();recolorMini();render();});
-$('#c_bg').addEventListener('input',e=>{St.bg=e.target.value;render();});
-$('#c_fg').addEventListener('input',e=>{St.fg=e.target.value;render();});
-$('#c_ln').addEventListener('input',e=>{St.line=e.target.value;render();});
+$('#c_acc').addEventListener('input',e=>{St.accent=e.target.value;syncPresets();recolorMini();renderRAF();});
+$('#c_bg').addEventListener('input',e=>{St.bg=e.target.value;renderRAF();});
+$('#c_fg').addEventListener('input',e=>{St.fg=e.target.value;renderRAF();});
+$('#c_ln').addEventListener('input',e=>{St.line=e.target.value;renderRAF();});
 
 function readImg(file,cb){ const r=new FileReader(); r.onload=()=>cb(r.result); r.readAsDataURL(file); }
 $('#f_hero').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) readImg(f,d=>{St.hero={img:d}; $('#f_herolbl').firstChild.nodeValue='✓ 대표 이미지 변경'; render();}); });
